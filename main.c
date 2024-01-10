@@ -66,7 +66,6 @@ void hash_SHA1(const char* s, byte* empreinte)
     SHA1((unsigned char*)s, strlen(s), empreinte);
 }
 
-// Structure pour stocker les configurations
 struct Config {
     char *alphabet;
     int taille;
@@ -82,48 +81,57 @@ void calculerN(char *alphabet, int taille) {
     globalConfig.taille = taille;
 
     int tailleAlphabet = strlen(alphabet);
-    globalConfig.N = pow(tailleAlphabet, taille);
+    globalConfig.N = (unsigned long long)pow(tailleAlphabet, taille);
 }
 
 // Vérifier si la valeur de N est correcte
 int estValeurCorrecte(unsigned long long N) {
-    // Vérifie si N est inférieur à une valeur maximale (par exemple, 2^64 - 1)
-    unsigned long long valeurMaximale = ULLONG_MAX;
-    return N <= valeurMaximale;
+    return N <= ULLONG_MAX;
 }
 
+// Afficher la configuration
+void afficherConfiguration() {
+    printf("Configuration :\n");
+    printf(" - Alphabet : %s\n", globalConfig.alphabet);
+    printf(" - Taille des textes clairs : %d\n", globalConfig.taille);
+    printf(" - Nombre de textes clairs valides (N) : %llu\n", globalConfig.N);
+}
 
-int main(int argc, char* argv[])
-{
-
-       byte salut[60];
-       byte bob[60];
-       hash_SHA1("Salut", salut);
-       hash_SHA1("Bob", bob);
-
-   printf("Hash of 'salut': ");
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        printf("%02x", salut[i]);
+int main(int argc, char *argv[]) {
+    if (argc < 4) {
+        printf("Usage: %s <ALPHABET> <TAILLE> <COMMANDE> [ARGUMENTS]\n", argv[0]);
+        return 1;
     }
-    printf("\n");
 
-    printf("Hash of 'bob': ");
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
-        printf("%02x", bob[i]);
-    }
-    printf("\n");
-
-    printf("********************************\n");
-    printf("********************************\n");
-    char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
-    int taille = 4;
+    char *alphabet = argv[1];
+    int taille = atoi(argv[2]);
+    char *commande = argv[3];
 
     calculerN(alphabet, taille);
 
-    if (estValeurCorrecte(globalConfig.N)) {
-        printf("Valeur de N : %llu\n", globalConfig.N);
-    } else {
-        printf("La valeur de N n'est pas correcte.\n");
+    if (!estValeurCorrecte(globalConfig.N)) {
+        printf("Erreur : la valeur de N n'est pas correcte.\n");
+        return 1;
     }
 
+    if (strcmp(commande, "create") == 0) {
+        // Ajoutez ici le code pour créer une table arc-en-ciel (question 10)
+        printf("Commande : create\n");
+        // Ajoutez votre code ici
+    } else if (strcmp(commande, "crack") == 0) {
+        // Ajoutez ici le code pour craquer un mot de passe (question 11)
+        printf("Commande : crack\n");
+        // Ajoutez votre code ici
+    } else if (strcmp(commande, "test") == 0) {
+        // Ajoutez ici le code pour les tests correspondants
+        printf("Commande : test\n");
+        // Ajoutez votre code ici
+    } else {
+        printf("Erreur : commande non reconnue.\n");
+        return 1;
+    }
+
+    afficherConfiguration();
+
+    return 0;
 }
