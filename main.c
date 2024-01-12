@@ -29,6 +29,8 @@ void help(char* name) {
     printf("  [ARGUMENTS]           Additional arguments required by specific commands\n");
 }
 
+
+
 typedef unsigned char byte;
 void hash_SHA1(const char* s, byte* empreinte)
 {
@@ -108,6 +110,27 @@ uint64_t nouvelle_chaine(uint64_t idx1, int largeur)
     return indice;
 }
 
+uint64_t index_aleatoire(){
+    uint64_t n = ( (uint64_t) n2 ) + ( ( (uint64_t) n1 ) << 32 );
+    uint64_t N = globalConfig.N;
+    return n % N;
+}
+
+uint64_t** creer_table(largeur, hauteur)
+{
+    uint64_t table[hauteur][2];
+    for(int h = 0; h < hauteur; h++) {
+        uint64_t idx = index_aleatoire();
+        //uint64_t last_idx = nouvelle_chaine(idx, largeur);
+        uint64_t last_idx = nouvelle_chaine(h, largeur);
+        table* = [idx, last_idx];
+        table++;
+    }
+
+    // trier par last_idx dans table;
+    // qsort(table)
+}
+
 int main(int argc, char *argv[]) {
     srand(time(NULL));
     
@@ -167,6 +190,7 @@ int main(int argc, char *argv[]) {
        int t = atoi(argv[5]);
        uint64_t N = globalConfig.N;
        
+       uint64_t random_index = index_aleatoire();
        // Calcul h2i
        uint64_t indice = h2i(hash, t);
        
@@ -190,7 +214,6 @@ int main(int argc, char *argv[]) {
 
         unsigned long n1 = rand();
         unsigned long n2 = rand();
-        uint64_t n = ( (uint64_t) n2 ) + ( ( (uint64_t) n1 ) << 32 );
         
         // Calcul i2i
         uint64_t last_indice = nouvelle_chaine(t, largeur);
@@ -199,6 +222,16 @@ int main(int argc, char *argv[]) {
         printf("taille: %d\n", globalConfig.taille);
         printf("N: %llu\n\n", globalConfig.N);
         printf("chain of length %d: 1 ... %llu\n", largeur, last_indice);
+
+    }
+    else if (strcmp(commande, "creer_table") == 0) {
+        // ./main abcdefghijklmnopqrstuvwxyz 5 creer_table 200 100
+        if (argc < 5) {
+            printf("Usage: %s <ALPHABET> <TAILLE> creer_table <LARGEUR> <HAUTEUR>\n", argv[0]);
+            return 1;
+        }
+
+        creer_table(100,200);
 
     }else {
         printf("Erreur : commande non reconnue.\n");
