@@ -28,6 +28,85 @@ struct Header {
     int hauteur;
 };
 
+int recherche(uint64_t **table, int hauteur, uint64_t idx, int *a, int *b) {
+    int debut = 0;
+    int fin = hauteur - 1;
+    int trouve = 0;
+
+    while (debut <= fin && !trouve) {
+        int milieu = (debut + fin) / 2;
+
+        if (table[milieu][1] == idx) {
+            trouve = 1;
+            *a = *b = milieu;
+
+            // Recherche vers le haut
+            while (*a > 0 && table[*a - 1][1] == idx) {
+                (*a)--;
+            }
+
+            // Recherche vers le bas
+            while (*b < hauteur - 1 && table[*b + 1][1] == idx) {
+                (*b)++;
+            }
+        } else if (table[milieu][1] < idx) {
+            debut = milieu + 1;
+        } else {
+            fin = milieu - 1;
+        }
+    }
+
+    return trouve;
+}
+
+// Vérifie si un candidat est correct
+int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
+    for (int i = t - 1; i >= 0; i--) {
+        idx = i2i(idx, i);
+    }
+
+    i2c(idx, globalConfig.alphabet, globalConfig.taille, clair);
+    byte h2[SHA_DIGEST_LENGTH];
+    hash_SHA1(clair, h2);
+
+    return memcmp(h2, h, SHA_DIGEST_LENGTH) == 0;
+}
+
+// Fonction d'inversion
+int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
+    int nb_candidats = 0;
+    int trouve = 0;
+
+    for (int t = largeur - 1; t > 0; t--) {
+        uint64_t idx = h2i(h, t);
+        int a, b;
+
+        if (recherche(table, hauteur, idx, &a, &b)) {
+            for (int i = a; i <= b; i++) {
+                if (verifie_candidat(h, t, table[i][0], clair)) {
+                    trouve = 1;
+                    break;
+                } else {
+                    nb_candidats++;
+                }
+            }
+        }
+
+        if (trouve) {
+            break;
+        }
+    }
+
+    if (trouve) {
+        printf("Inverse trouvé : %s\n", clair);
+        return 1;
+    } else {
+        printf("Aucun candidat correct trouvé. Nombre de candidats : %d\n", nb_candidats);
+        return 0;
+    }
+}
+
+
 void sauve_table_ascii(char *filename, int largeur, int hauteur, uint64_t **table) {
 
     FILE *file = fopen(filename, "w");
@@ -58,64 +137,98 @@ uint64_t** ouvre_table_ascii(char *filename, int *largeur, int *hauteur) {
         exit(1);
     }
 
-    // struct Header w;
-    // fscanf(file, "%s %d %d %d", w.alphabet, &w.taille, &w.largeur, &w.hauteur);
-    // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
+    struct Header h;
+    char tempAlphabet[256];  // Assuming a maximum length for the alphabet
 
-    char *alphabet = NULL;  // Dynamic string to store the line
-    size_t bufsize = 0; // Initial size of the buffer
-
-    // Read a line from the file
-    if (getline(&alphabet, &bufsize, file) == -1) {
-        // Display the read string
-        perror("Error reading from file");
+    // Read the alphabet dynamically
+    if (fscanf(file, "%255s %d %d %d\n", tempAlphabet, &h.taille, &h.largeur, &h.hauteur) != 4) {
+        perror("Error reading header");
         exit(1);
     }
 
-    bufsize = 0;
+    printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", tempAlphabet, h.taille, h.largeur, h.hauteur);
+    h.alphabet = malloc(strlen(tempAlphabet) + 1);
+    strcpy(h.alphabet, tempAlphabet);
 
-    int* taille = NULL;
-    if (getline(&taille, &bufsize, file) == -1) {
-        // Display the read string
-        perror("Error reading from file");
-        exit(1);
-    }
-
-    printf("%d", *taille);
-
-
-
-    free(alphabet);
-    free(taille);
-
-    // uint64_t tailleAlphabet;
-    // fscanf(file, "%md", tailleAlphabet);
-    // char alph[40];
-    // fscanf(file, "%ms", alph);
-    // printf("%d", tailleAlphabet);
-    // exit(1);
-
-    // struct Header w;
-    // fscanf(file, "%ms\n", w.alphabet);
-    // printf("%s", w.alphabet);
-    exit(1);
-    // fscanf(file, "%d\n", w.taille);
-    // fscanf(file, "%d\n", w.largeur);
-    // fscanf(file, "%d\n", w.hauteur);
-    // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
-
-    // *largeur = h.largeur;
-    // *hauteur = h.hauteur;
+    *largeur = h.largeur;
+    *hauteur = h.hauteur;
 
     uint64_t** table = (uint64_t**)malloc(*hauteur * sizeof(uint64_t*));
-    // for (int i = 0; i < *hauteur; i++) {
-    //     table[i] = (uint64_t*)malloc(2 * sizeof(uint64_t));
-    //     fscanf(file, "%lu %lu\n", &table[i][0], &table[i][1]);
-    // }
+    for (int i = 0; i < *hauteur; i++) {
+        table[i] = (uint64_t*)malloc(2 * sizeof(uint64_t));
+        if (fscanf(file, "%lu %lu\n", &table[i][0], &table[i][1]) != 2) {
+            perror("Error reading table entry");
+            exit(1);
+        }
+    }
 
     fclose(file);
 
     return table;
+
+
+
+
+
+     // FILE *file = fopen(filename, "r");
+    // if (file == NULL) {
+    //     perror("Error opening file");
+    //     exit(1);
+    // }
+
+    // // struct Header w;
+    // // fscanf(file, "%s %d %d %d", w.alphabet, &w.taille, &w.largeur, &w.hauteur);
+    // // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
+
+    // char *alphabet = NULL;  // Dynamic string to store the line
+    // size_t bufsize = 0; // Initial size of the buffer
+
+    // // Read a line from the file
+    // if (getline(&alphabet, &bufsize, file) == -1) {
+    //     // Display the read string
+    //     perror("Error reading from file");
+    //     exit(1);
+    // }
+
+    // // fscanf(file, "%d", taille);
+
+    // printf("%d", *taille);
+
+
+
+    // free(alphabet);
+    // free(taille);
+
+    // // uint64_t tailleAlphabet;
+    // // fscanf(file, "%md", tailleAlphabet);
+    // // char alph[40];
+    // // fscanf(file, "%ms", alph);
+    // // printf("%d", tailleAlphabet);
+    // // exit(1);
+
+    // // struct Header w;
+    // // fscanf(file, "%ms\n", w.alphabet);
+    // // printf("%s", w.alphabet);
+    // exit(1);
+    // // fscanf(file, "%d\n", w.taille);
+    // // fscanf(file, "%d\n", w.largeur);
+    // // fscanf(file, "%d\n", w.hauteur);
+    // // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
+
+    // // *largeur = h.largeur;
+    // // *hauteur = h.hauteur;
+
+    // uint64_t** table = (uint64_t**)malloc(*hauteur * sizeof(uint64_t*));
+    // // for (int i = 0; i < *hauteur; i++) {
+    // //     table[i] = (uint64_t*)malloc(2 * sizeof(uint64_t));
+    // //     fscanf(file, "%lu %lu\n", &table[i][0], &table[i][1]);
+    // // }
+
+    // fclose(file);
+
+    // return table;
+
+   
 }
 
 
@@ -124,9 +237,9 @@ void affiche_table(char* filename)
     int largeur, hauteur;
     uint64_t** table = ouvre_table_ascii(filename, &largeur, &hauteur);
     
-    // for (int h = 0; h < hauteur; h++) {
-    //     printf("%lu %lu\n", table[h][0], table[h][1]);
-    // }
+     for (int h = 0; h < hauteur; h++) {
+         printf("%lu %lu\n", table[h][0], table[h][1]);
+     }
 }
 
 void help(char* name) {
