@@ -133,7 +133,12 @@ void creer_table(int largeur, int hauteur, uint64_t **table) {
         table[h][0] = idx;
         table[h][1] = last_idx;
     }
-    qsort(table, hauteur, sizeof(table[0]), compare);
+
+    for (int i = 0; i < 200; i++) {
+        printf("%lu %lu\n", table[i][0], table[i][1]);
+    }
+
+    //qsort(table, hauteur, sizeof(table[0]), compare);
 }
 
 
@@ -233,9 +238,8 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        uint64_t** table;
+        uint64_t table[200][2];
         creer_table(100,200,table);
-
     }
     else {
         printf("Erreur : commande non reconnue.\n");
