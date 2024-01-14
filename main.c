@@ -33,20 +33,6 @@ int compare(const void *a, const void *b) {
     return (*(uint64_t (*)[2])a)[1] - (*(uint64_t (*)[2])b)[1];
 }
 
-void creer_table(int largeur, int hauteur, uint64_t **table) {
-    for (int i = 0; i < hauteur; i++) {
-        table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
-    }
-
-    for (int h = 0; h < hauteur; h++) {
-        uint64_t idx = index_aleatoire();
-        uint64_t last_idx = nouvelle_chaine(idx, largeur);
-        table[h][0] = idx;
-        table[h][1] = last_idx;
-    }
-    qsort(table, hauteur, sizeof(table[0]), compare);
-}
-
 
 
 typedef unsigned char byte;
@@ -136,6 +122,20 @@ uint64_t index_aleatoire(){
     return n % N;
 }
 
+void creer_table(int largeur, int hauteur, uint64_t **table) {
+    for (int i = 0; i < hauteur; i++) {
+        table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
+    }
+
+    for (int h = 0; h < hauteur; h++) {
+        uint64_t idx = index_aleatoire();
+        uint64_t last_idx = nouvelle_chaine(idx, largeur);
+        table[h][0] = idx;
+        table[h][1] = last_idx;
+    }
+    qsort(table, hauteur, sizeof(table[0]), compare);
+}
+
 
 
 int main(int argc, char *argv[]) {
@@ -202,9 +202,9 @@ int main(int argc, char *argv[]) {
        
        printf("alphabet: %s\n", globalConfig.alphabet);
        printf("taille: %d\n", globalConfig.taille);
-       printf("N: %llu\n", N);
+       printf("N: %lu\n", N);
        printf("hash(\"%s\") = ", word);print_hexa(hash);       
-       printf("h2i(hash(%s), %d) = %llu\n", word, t, indice);
+       printf("h2i(hash(%s), %d) = %lu\n", word, t, indice);
        
     } 
     else if (strcmp(commande, "i2i") == 0) {
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
         printf("alphabet: %s\n", globalConfig.alphabet);
         printf("taille: %d\n", globalConfig.taille);
         printf("N: %llu\n\n", globalConfig.N);
-        printf("chain of length %d: 1 ... %llu\n", largeur, last_indice);
+        printf("chain of length %d: 1 ... %lu\n", largeur, last_indice);
 
     }
     else if (strcmp(commande, "creer_table") == 0) {
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        uint64_t table[200][2];
+        uint64_t** table;
         creer_table(100,200,table);
 
     }
