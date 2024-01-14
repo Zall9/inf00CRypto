@@ -30,7 +30,7 @@ void help(char* name) {
 }
 
 int compare(const void *a, const void *b) {
-    return (*(uint64_t (*)[2])a)[1] - (*(uint64_t (*)[2])b)[1];
+    return (*((uint64_t **)a))[1] - (*((uint64_t **)b))[1];
 }
 
 
@@ -134,11 +134,19 @@ void creer_table(int largeur, int hauteur, uint64_t **table) {
         table[h][1] = last_idx;
     }
 
-    for (int i = 0; i < 200; i++) {
+    // Print the unsorted table
+    for (int i = 0; i < hauteur; i++) {
         printf("%lu %lu\n", table[i][0], table[i][1]);
     }
 
-    //qsort(table, hauteur, sizeof(table[0]), compare);
+    // Sort the table by the second column
+    qsort(table, hauteur, sizeof(uint64_t *), compare);
+    
+    // Print the sorted table
+    printf("\nSorted Table:\n");
+    for (int i = 0; i < hauteur; i++) {
+        printf("%lu %lu\n", table[i][0], table[i][1]);
+    }
 }
 
 
@@ -207,9 +215,9 @@ int main(int argc, char *argv[]) {
        
        printf("alphabet: %s\n", globalConfig.alphabet);
        printf("taille: %d\n", globalConfig.taille);
-       printf("N: %lu\n", N);
+       printf("N: %llu\n", N);
        printf("hash(\"%s\") = ", word);print_hexa(hash);       
-       printf("h2i(hash(%s), %d) = %lu\n", word, t, indice);
+       printf("h2i(hash(%s), %d) = %llu\n", word, t, indice);
        
     } 
     else if (strcmp(commande, "i2i") == 0) {
@@ -228,7 +236,7 @@ int main(int argc, char *argv[]) {
         printf("alphabet: %s\n", globalConfig.alphabet);
         printf("taille: %d\n", globalConfig.taille);
         printf("N: %llu\n\n", globalConfig.N);
-        printf("chain of length %d: 1 ... %lu\n", largeur, last_indice);
+        printf("chain of length %d: 1 ... %llu\n", largeur, last_indice);
 
     }
     else if (strcmp(commande, "creer_table") == 0) {
