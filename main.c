@@ -7,6 +7,127 @@
 #include <time.h>
 
 // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+typedef unsigned char byte;
+struct Config {
+    char *alphabet;
+    int tailleAlphabet;
+    int taille;
+    unsigned long long N;
+    char* TEXTE_CLAIR;
+    byte EMPREINTE[SHA_DIGEST_LENGTH];
+};
+
+
+// Configuration globale
+struct Config globalConfig;
+
+struct Header {
+    char *alphabet;
+    int taille;
+    int largeur;
+    int hauteur;
+};
+
+void sauve_table_ascii(char *filename, int largeur, int hauteur, uint64_t **table) {
+
+    FILE *file = fopen(filename, "w");
+
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+
+    // Writer header
+    struct Header w = { globalConfig.alphabet, globalConfig.taille, largeur, hauteur };
+    fprintf(file, "%s\n", w.alphabet);
+    fprintf(file, "%d\n", w.taille);
+    fprintf(file, "%d\n", w.largeur);
+    fprintf(file, "%d\n", w.hauteur);
+    
+    // Write table data
+    for (int h = 0; h < hauteur; h++) {
+        fprintf(file, "%lu %lu\n", table[h][0], table[h][1]);
+    }
+    fclose(file);
+}
+
+uint64_t** ouvre_table_ascii(char *filename, int *largeur, int *hauteur) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        exit(1);
+    }
+
+    // struct Header w;
+    // fscanf(file, "%s %d %d %d", w.alphabet, &w.taille, &w.largeur, &w.hauteur);
+    // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
+
+    char *alphabet = NULL;  // Dynamic string to store the line
+    size_t bufsize = 0; // Initial size of the buffer
+
+    // Read a line from the file
+    if (getline(&alphabet, &bufsize, file) == -1) {
+        // Display the read string
+        perror("Error reading from file");
+        exit(1);
+    }
+
+    bufsize = 0;
+
+    int* taille = NULL;
+    if (getline(&taille, &bufsize, file) == -1) {
+        // Display the read string
+        perror("Error reading from file");
+        exit(1);
+    }
+
+    printf("%d", *taille);
+
+
+
+    free(alphabet);
+    free(taille);
+
+    // uint64_t tailleAlphabet;
+    // fscanf(file, "%md", tailleAlphabet);
+    // char alph[40];
+    // fscanf(file, "%ms", alph);
+    // printf("%d", tailleAlphabet);
+    // exit(1);
+
+    // struct Header w;
+    // fscanf(file, "%ms\n", w.alphabet);
+    // printf("%s", w.alphabet);
+    exit(1);
+    // fscanf(file, "%d\n", w.taille);
+    // fscanf(file, "%d\n", w.largeur);
+    // fscanf(file, "%d\n", w.hauteur);
+    // printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", w.alphabet, w.taille, w.largeur, w.hauteur);
+
+    // *largeur = h.largeur;
+    // *hauteur = h.hauteur;
+
+    uint64_t** table = (uint64_t**)malloc(*hauteur * sizeof(uint64_t*));
+    // for (int i = 0; i < *hauteur; i++) {
+    //     table[i] = (uint64_t*)malloc(2 * sizeof(uint64_t));
+    //     fscanf(file, "%lu %lu\n", &table[i][0], &table[i][1]);
+    // }
+
+    fclose(file);
+
+    return table;
+}
+
+
+void affiche_table(char* filename)
+{
+    int largeur, hauteur;
+    uint64_t** table = ouvre_table_ascii(filename, &largeur, &hauteur);
+    
+    // for (int h = 0; h < hauteur; h++) {
+    //     printf("%lu %lu\n", table[h][0], table[h][1]);
+    // }
+}
 
 void help(char* name) {
     printf("Usage: %s <ALPHABET> <TAILLE> <COMMANDE> [ARGUMENTS]\n", name);
@@ -35,23 +156,11 @@ int compare(const void *a, const void *b) {
 
 
 
-typedef unsigned char byte;
+
 void hash_SHA1(const char* s, byte* empreinte)
 {
     SHA1((unsigned char*)s, strlen(s), empreinte);
 }
-
-struct Config {
-    char *alphabet;
-    int tailleAlphabet;
-    int taille;
-    unsigned long long N;
-    char* TEXTE_CLAIR;
-    byte EMPREINTE[SHA_DIGEST_LENGTH];
-};
-
-// Configuration globale
-struct Config globalConfig;
 
 void print_hexa(byte* empreinte)
 {
@@ -159,6 +268,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // for (int i = 0; i < argc; i++) {
+    //         printf("argv[%d]: %s\n", i, argv[i]);
+    // }
+
     char *commande = argv[3];
     setUpConfig(argv[1], atoi(argv[2]));
 
@@ -246,8 +359,35 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        uint64_t table[200][2];
-        creer_table(100,200,table);
+        int largeur = atoi(argv[4]);
+        int hauteur = atoi(argv[5]);
+
+        uint64_t table[hauteur][2];
+        creer_table(largeur, hauteur, table);
+    }
+    else if (strcmp(commande, "sauve_table") == 0) {
+        // ./main abcdefghijklmnopqrstuvwxyz 5 sauve_table 200 100 test.txt
+        if (argc < 6) {
+            printf("Usage: %s <ALPHABET> <TAILLE> sauve_table <LARGEUR> <HAUTEUR> <FILENAME>\n", argv[0]);
+            return 1;
+        }
+
+        int largeur = atoi(argv[4]);
+        int hauteur = atoi(argv[5]);
+        
+        uint64_t table[hauteur][2];
+        creer_table(largeur, hauteur, table);
+
+        sauve_table_ascii(argv[6], largeur, hauteur, table);
+    }
+    else if (strcmp(commande, "info") == 0) {
+        // ./main abcdefghijklmnopqrstuvwxyz 5 info test.txt
+        if (argc < 5) {
+            printf("Usage: %s <ALPHABET> <TAILLE> info <FILENAME>\n", argv[0]);
+            return 1;
+        }
+
+        affiche_table(argv[4]);
     }
     else {
         printf("Erreur : commande non reconnue.\n");
