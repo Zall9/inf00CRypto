@@ -29,6 +29,24 @@ void help(char* name) {
     printf("  [ARGUMENTS]           Additional arguments required by specific commands\n");
 }
 
+int compare(const void *a, const void *b) {
+    return (*(uint64_t (*)[2])a)[1] - (*(uint64_t (*)[2])b)[1];
+}
+
+void creer_table(int largeur, int hauteur, uint64_t **table) {
+    for (int i = 0; i < hauteur; i++) {
+        table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
+    }
+
+    for (int h = 0; h < hauteur; h++) {
+        uint64_t idx = index_aleatoire();
+        uint64_t last_idx = nouvelle_chaine(idx, largeur);
+        table[h][0] = idx;
+        table[h][1] = last_idx;
+    }
+    qsort(table, hauteur, sizeof(table[0]), compare);
+}
+
 
 
 typedef unsigned char byte;
@@ -111,25 +129,14 @@ uint64_t nouvelle_chaine(uint64_t idx1, int largeur)
 }
 
 uint64_t index_aleatoire(){
+    unsigned long n1 = rand();
+    unsigned long n2 = rand();
     uint64_t n = ( (uint64_t) n2 ) + ( ( (uint64_t) n1 ) << 32 );
     uint64_t N = globalConfig.N;
     return n % N;
 }
 
-uint64_t** creer_table(largeur, hauteur)
-{
-    uint64_t table[hauteur][2];
-    for(int h = 0; h < hauteur; h++) {
-        uint64_t idx = index_aleatoire();
-        //uint64_t last_idx = nouvelle_chaine(idx, largeur);
-        uint64_t last_idx = nouvelle_chaine(h, largeur);
-        table* = [idx, last_idx];
-        table++;
-    }
 
-    // trier par last_idx dans table;
-    // qsort(table)
-}
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
@@ -190,7 +197,6 @@ int main(int argc, char *argv[]) {
        int t = atoi(argv[5]);
        uint64_t N = globalConfig.N;
        
-       uint64_t random_index = index_aleatoire();
        // Calcul h2i
        uint64_t indice = h2i(hash, t);
        
@@ -210,10 +216,6 @@ int main(int argc, char *argv[]) {
          // Recupere t, N
         int t = atoi(argv[4]);
         int largeur = atoi(argv[5]);
-        uint64_t N = globalConfig.N;
-
-        unsigned long n1 = rand();
-        unsigned long n2 = rand();
         
         // Calcul i2i
         uint64_t last_indice = nouvelle_chaine(t, largeur);
@@ -231,9 +233,11 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        creer_table(100,200);
+        uint64_t table[200][2];
+        creer_table(100,200,table);
 
-    }else {
+    }
+    else {
         printf("Erreur : commande non reconnue.\n");
     }
 

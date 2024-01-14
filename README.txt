@@ -25,8 +25,9 @@ Question 5:
     Néanmoins, elle requiert des calculs supplémentaires pour chaque recherche par rapport à l'approche exhaustive.
 
 
-Question 6:
+Question 8:
 
 Le fait d'ajouter le paramètre t dans la fonction h2i permets d'introduire un décalage supplémentaire lors du calcul de la fonction de hachage.
 Ce décalage genère des indices distincts pour des empreintes identiques, ce qui augmente la couverture de la table.
 Il est alors possible de différencier des textes clairs qui produiraient normalement la même empreinte.
+
