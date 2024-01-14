@@ -1,4 +1,4 @@
-
+Makefile pour Linux : Il faut renommer le fichier Makefile_linux en Makefile.
 
 Question 5:
     Recherche exhaustive :

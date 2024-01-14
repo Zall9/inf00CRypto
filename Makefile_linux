@@ -1,0 +1,21 @@
+LDFLAGS = -lcrypto -lssl -lm
+FLAGS = -std=c99 -Wall -Wextra -pedantic -Werror -O4
+
+GCC = gcc
+EXE = tp1
+
+FILES = test.c main.c
+O_FILES = $(FILES:.c=.o)
+
+all: $(EXE)
+
+%.o: %.c rbt.h
+	$(GCC) $(FLAGS) -c $<
+	
+$(EXE): $(O_FILES)
+	$(GCC) $(FLAGS) $(O_FILES) -o $(EXE) $(LDFLAGS)
+
+clean:
+	rm -f *.o a.out gmon.out
+
+.PHONY: all
