@@ -202,9 +202,9 @@ int main(int argc, char *argv[]) {
        
        printf("alphabet: %s\n", globalConfig.alphabet);
        printf("taille: %d\n", globalConfig.taille);
-       printf("N: %lu\n", N);
+       printf("N: %llu\n", N);
        printf("hash(\"%s\") = ", word);print_hexa(hash);       
-       printf("h2i(hash(%s), %d) = %lu\n", word, t, indice);
+       printf("h2i(hash(%s), %d) = %llu\n", word, t, indice);
        
     } 
     else if (strcmp(commande, "i2i") == 0) {
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
         printf("alphabet: %s\n", globalConfig.alphabet);
         printf("taille: %d\n", globalConfig.taille);
         printf("N: %llu\n\n", globalConfig.N);
-        printf("chain of length %d: 1 ... %lu\n", largeur, last_indice);
+        printf("chain of length %d: 1 ... %llu\n", largeur, last_indice);
 
     }
     else if (strcmp(commande, "creer_table") == 0) {
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        uint64_t** table;
+        uint64_t** table = NULL;
         creer_table(100,200,table);
 
     }
