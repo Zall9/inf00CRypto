@@ -70,7 +70,7 @@ La complexité de la fonction de recherche dichotomique est logarithmique en le 
 Dans son pire cas, la compléxité de cette fonction est : O(log(n)) où n est la hauteur.
 
 Question 13 =================================================================
-
+    test    : ./tp1 abcdefghijklmnopqrstuvwxyz 4 stats 200 200
 
 Question 14 =================================================================
 

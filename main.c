@@ -203,6 +203,8 @@ void help() {
            "            Show rainbow table from file\n");     
     printf("  <ALPHABET> <TAILLE> inverse <FILENAME> <8_BYTE_HASH>\n"
            "            Crack a give byte in the given filename\n");
+    printf("  <ALPHABET> <TAILLE> stats <HAUTEUR> <LARGEUR>\n"
+           "            Give length and couverture estimation \n");
 }
 
 void print_hexa(byte* empreinte)
@@ -245,6 +247,20 @@ uint64_t index_aleatoire(){
 
 int compare(const void *a, const void *b) {
     return (*((uint64_t **)a))[1] - (*((uint64_t **)b))[1];
+}
+
+void estimation(int largeur, int hauteur) {
+    double m = hauteur;
+    double v = 1.0;
+    for (int i = 0; i < largeur; i++) {
+        v = v * (1 - m / (double)globalConfig.N);
+        m = (double)globalConfig.N * (1 - exp(-m / (double)globalConfig.N));
+    }
+    double couverture = 100 * (1-v);
+    double taille = hauteur * largeur / 8;
+
+    printf("Estimation taille table : %f\n", taille);
+    printf("Estimation couverture   : %f\n", couverture);
 }
 
 void creer_table(int largeur, int hauteur, uint64_t **table) {
@@ -405,6 +421,17 @@ int main(int argc, char *argv[]) {
         }
 
         affiche_table(argv[4]);
+    }
+    else if (strcmp(commande, "stats") == 0) {
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 4 stats 200 200
+        if (argc < 5) {
+            printf("Usage: %s <ALPHABET> <TAILLE> stats <HAUTEUR> <LARGEUR>\n", argv[0]);
+            return 1;
+        }
+
+        int hauteur = atoi(argv[4]);
+        int largeur = atoi(argv[5]);
+        estimation(largeur, hauteur);
     }
     else if (strcmp(commande, "inverse") == 0){
         // ./tp1 abcdefghijklmnopqrstuvwxyz 5 inverse test.txt 1bfbdf35b1359fc6b6f93893874cf23a50293de5
