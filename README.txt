@@ -91,6 +91,38 @@ Question 16 =================================================================
     test 1 :
         ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
         ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61 1
+        pour une table de largeur 5000 et hauteur 500        
+        Configuration :
+        - Alphabet : ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        - Taille des textes clairs : 4
+        - Nombre de textes clairs valides (N) : 456976
+        Commande : inverse
+        dCandidat correct trouvé : CODE , nombre de candidats : 2833
+        Inverse trouvé : CODE
+        Temps d'exécution : 2.883851 secondes
+
+        pour une table de largeur 10000 et hauteur 750:
+        Configuration :
+            - Alphabet : ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            - Taille des textes clairs : 4
+            - Nombre de textes clairs valides (N) : 456976
+            Commande : inverse
+            Candidat correct trouvé : CODE , nombre de candidats : 40701
+            Inverse trouvé : CODE
+            Temps d'exécution : 56.592038 secondes
+        Test pour un mot de taille 5
+        Configuration :
+            - Alphabet : abcdefghijklmnopqrstuvwxyz0123456789,;:$.
+            - Taille des textes clairs : 5
+            - Nombre de textes clairs valides (N) : 115856201
+            Commande : inverse
+        Candidat correct trouvé : n00b. , nombre de candidats : 64
+        Inverse trouvé : n00b.
+        Temps d'exécution : 2.012933 secondes
+        Configuration :
+            - Alphabet : abcdefghijklmnopqrstuvwxyz0123456789,;:$.
+            - Taille des textes clairs : 5
+            - Nombre de textes clairs valides (N) : 115856201
 
 Question 17 =================================================================
 
