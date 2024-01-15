@@ -516,9 +516,10 @@ int main(int argc, char *argv[]) {
                 printf("Usage: %s <ALPHABET> <TAILLE> inverse <hauteur> <largeur> <8_BYTE_HASH>\n", argv[0]);
                 return 1;
             }
+
+            int hauteur = atoi(argv[4]);
             int largeur = atoi(argv[5]);
-            int hauteur = atoi(argv[6]);
-            byte hash = atoi(argv[7]);
+            byte hash   = atoi(argv[6]);
             uint64_t **table = (uint64_t **)malloc(hauteur * sizeof(uint64_t *));
             for (int i = 0; i < hauteur; i++) {
                 table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
@@ -529,9 +530,9 @@ int main(int argc, char *argv[]) {
 
             char clair[globalConfig.taille + 1];
 
-            hexstr_to_bytes(argv[4], hash);
+            hexstr_to_bytes(argv[4], &hash);
 
-            if (inverse(table, hauteur, largeur, hash, clair)) {
+            if (inverse(table, hauteur, largeur, &hash, clair)) {
                 printf("Inverse trouvé : %s\n", clair);
             } else {
                 printf("Aucun candidat correct trouvé.\n");
