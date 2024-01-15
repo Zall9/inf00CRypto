@@ -111,6 +111,7 @@ Question 16 =================================================================
             Inverse trouvé : CODE
             Temps d'exécution : 56.592038 secondes
         Test pour un mot de taille 5
+        ./main "abcdefghijklmnopqrstuvwxyz0123456789,;:$." 5 sauve_table 10000 1000 test.txt && ./main "abcdefghijklmnopqrstuvwxyz0123456789,;:$." 5 inverse test.txt dafaa5e15a30ecd52c2d1dc6d1a3d8a0633e67e2 0
         Configuration :
             - Alphabet : abcdefghijklmnopqrstuvwxyz0123456789,;:$.
             - Taille des textes clairs : 5
