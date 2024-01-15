@@ -28,6 +28,44 @@ struct Header {
     int hauteur;
 };
 
+
+void i2c(unsigned long long n, const char *alphabet, int taille, char *texteClair) {
+    int i;
+    for (i = taille - 1; i >= 0; --i) {
+        texteClair[i] = alphabet[n % strlen(alphabet)];
+        n /= strlen(alphabet);
+    }
+    texteClair[taille] = '\0';
+}
+
+
+
+void hash_SHA1(const char* s, byte* empreinte)
+{
+    SHA1((unsigned char*)s, strlen(s), empreinte);
+}
+
+uint64_t h2i(unsigned char *y, int t) {
+    uint64_t empreinte = *((uint64_t *)y); // Convertir les 8 premiers octets en uint64_t
+    return (empreinte + t) % globalConfig.N;
+}
+
+uint64_t i2i (int indice, int t) 
+{
+    // i2c
+    i2c(indice, globalConfig.alphabet, globalConfig.taille, globalConfig.TEXTE_CLAIR);
+    // printf("%d --i2c--> %s", indice, globalConfig.TEXTE_CLAIR);
+
+    // H
+    hash_SHA1(globalConfig.TEXTE_CLAIR, globalConfig.EMPREINTE);
+    // printf("--h--> "); print_hexa(globalConfig.EMPREINTE);
+    
+    // empreinte
+    uint64_t i = h2i(globalConfig.EMPREINTE, t);
+    // printf(" --h2i(%d)--> %llu\n", t, i);
+    return i;
+}
+
 int recherche(uint64_t **table, int hauteur, uint64_t idx, int *a, int *b) {
     int debut = 0;
     int fin = hauteur - 1;
@@ -269,28 +307,12 @@ int compare(const void *a, const void *b) {
 
 
 
-
-void hash_SHA1(const char* s, byte* empreinte)
-{
-    SHA1((unsigned char*)s, strlen(s), empreinte);
-}
-
 void print_hexa(byte* empreinte)
 {
     for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
         printf("%02x", empreinte[i]);
     }
 }
-
-void i2c(unsigned long long n, const char *alphabet, int taille, char *texteClair) {
-    int i;
-    for (i = taille - 1; i >= 0; --i) {
-        texteClair[i] = alphabet[n % strlen(alphabet)];
-        n /= strlen(alphabet);
-    }
-    texteClair[taille] = '\0';
-}
-
 
 // Fonction pour calculer N en fonction de alphabet et taille
 void setUpConfig(char *alphabet, int taille) {
@@ -304,27 +326,6 @@ void setUpConfig(char *alphabet, int taille) {
 // Vérifier si la valeur de N est correcte
 int estValeurCorrecte(unsigned long long N) {
     return N <= ULLONG_MAX;
-}
-
-uint64_t h2i(unsigned char *y, int t) {
-    uint64_t empreinte = *((uint64_t *)y); // Convertir les 8 premiers octets en uint64_t
-    return (empreinte + t) % globalConfig.N;
-}
-
-uint64_t i2i (int indice, int t) 
-{
-    // i2c
-    i2c(indice, globalConfig.alphabet, globalConfig.taille, globalConfig.TEXTE_CLAIR);
-    // printf("%d --i2c--> %s", indice, globalConfig.TEXTE_CLAIR);
-
-    // H
-    hash_SHA1(globalConfig.TEXTE_CLAIR, globalConfig.EMPREINTE);
-    // printf("--h--> "); print_hexa(globalConfig.EMPREINTE);
-    
-    // empreinte
-    uint64_t i = h2i(globalConfig.EMPREINTE, t);
-    // printf(" --h2i(%d)--> %llu\n", t, i);
-    return i;
 }
 
 uint64_t nouvelle_chaine(uint64_t idx1, int largeur)
@@ -368,6 +369,13 @@ void creer_table(int largeur, int hauteur, uint64_t **table) {
     printf("\nSorted Table:\n");
     for (int i = 0; i < hauteur; i++) {
         printf("%lu %lu\n", table[i][0], table[i][1]);
+    }
+}
+
+void hexstr_to_bytes(const char *hexstr, byte *bytes) {
+    while (*hexstr && hexstr[1]) {
+        sscanf(hexstr, "%2hhx", bytes++);
+        hexstr += 2;
     }
 }
 
@@ -501,6 +509,33 @@ int main(int argc, char *argv[]) {
         }
 
         affiche_table(argv[4]);
+    }
+    else if (strcmp(commande, "inverse") == 0){
+        printf("TEST:%s, %s, %s", argv[5], argv[6], argv[7]);
+        if (argc < 5) {
+                printf("Usage: %s <ALPHABET> <TAILLE> inverse <hauteur> <largeur> <8_BYTE_HASH>\n", argv[0]);
+                return 1;
+            }
+            int largeur = atoi(argv[5]);
+            int hauteur = atoi(argv[6]);
+            byte hash = atoi(argv[7]);
+            uint64_t **table = (uint64_t **)malloc(hauteur * sizeof(uint64_t *));
+            for (int i = 0; i < hauteur; i++) {
+                table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
+            }
+
+            // Création de la table
+            creer_table(largeur, hauteur, table);
+
+            char clair[globalConfig.taille + 1];
+
+            hexstr_to_bytes(argv[4], hash);
+
+            if (inverse(table, hauteur, largeur, hash, clair)) {
+                printf("Inverse trouvé : %s\n", clair);
+            } else {
+                printf("Aucun candidat correct trouvé.\n");
+            }
     }
     else {
         printf("Erreur : commande non reconnue.\n");
