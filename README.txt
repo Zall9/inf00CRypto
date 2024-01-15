@@ -66,8 +66,11 @@ En reprenant le fichier generer par le premier test de la question 10, on est ce
 Question 12 =================================================================
 
 
+La complexité de la fonction de recherche dichotomique est logarithmique en le nombre d’éléments composant le tableau dans lequel s’effectue la recherche.
+Dans son pire cas, la compléxité de cette fonction est : O(log(n)) où n est la hauteur.
 
 Question 13 =================================================================
+
 
 Question 14 =================================================================
 
