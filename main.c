@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-// ABCDEFGHIJKLMNOPQRSTUVWXYZ
 typedef unsigned char byte;
+
+// Configuration globale
 struct Config {
     char *alphabet;
     int tailleAlphabet;
@@ -16,9 +17,6 @@ struct Config {
     char* TEXTE_CLAIR;
     byte EMPREINTE[SHA_DIGEST_LENGTH];
 };
-
-
-// Configuration globale
 struct Config globalConfig;
 
 struct Header {
@@ -28,7 +26,6 @@ struct Header {
     int hauteur;
 };
 
-
 void i2c(unsigned long long n, const char *alphabet, int taille, char *texteClair) {
     int i;
     for (i = taille - 1; i >= 0; --i) {
@@ -37,8 +34,6 @@ void i2c(unsigned long long n, const char *alphabet, int taille, char *texteClai
     }
     texteClair[taille] = '\0';
 }
-
-
 
 void hash_SHA1(const char* s, byte* empreinte)
 {
@@ -52,28 +47,20 @@ uint64_t h2i(unsigned char *y, int t) {
 
 uint64_t i2i (int indice, int t) 
 {
-    // i2c
     i2c(indice, globalConfig.alphabet, globalConfig.taille, globalConfig.TEXTE_CLAIR);
-    // printf("%d --i2c--> %s", indice, globalConfig.TEXTE_CLAIR);
-
-    // H
-    hash_SHA1(globalConfig.TEXTE_CLAIR, globalConfig.EMPREINTE);
-    // printf("--h--> "); print_hexa(globalConfig.EMPREINTE);
-    
-    // empreinte
+    hash_SHA1(globalConfig.TEXTE_CLAIR, globalConfig.EMPREINTE);    
     uint64_t i = h2i(globalConfig.EMPREINTE, t);
-    // printf(" --h2i(%d)--> %llu\n", t, i);
     return i;
 }
 
 int recherche(uint64_t **table, int hauteur, uint64_t idx, int* a, int* b) {
-    int i = 0;
-    int j = hauteur - 1;
-    while (i <= j) {
-        int m = (i + j) / 2;
-        if (table[m][1] == idx) {
-            *a = m;
-            *b = m;
+    int debut = 0;
+    int fin = hauteur - 1;
+    while (debut <= fin) {
+        int milieu = (debut + fin) / 2;
+        if (table[milieu][1] == idx) {
+            *a = milieu;
+            *b = milieu;
             while (*a > 0 && table[*a - 1][1] == idx) {
                 (*a)--;
             }
@@ -81,32 +68,15 @@ int recherche(uint64_t **table, int hauteur, uint64_t idx, int* a, int* b) {
                 (*b)++;
             }
             return *b - *a + 1;
-        } else if (table[m][1] < idx) {
-            i = m + 1;
+        } else if (table[milieu][1] < idx) {
+            debut = milieu + 1;
         } else {
-            j = m - 1;
+            fin = milieu - 1;
         }
     }
     return 0;
 }
 
-int verif_hash(byte* h, byte* empreinte) {
-    for (int i = 0; i < SHA_DIGEST_LENGTH; i=i+1) {
-        uint8_t a_h = h[i];
-        uint8_t b_h = h[i+1];
-        //first byte of empreinte[i]
-        int a_empreinte = empreinte[i];
-        //second byte of empreinte[i]
-        int b_empreinte = empreinte[i];
-        if(a_h != a_empreinte && b_h != b_empreinte)
-        {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-// Vérifie si un candidat est correct
 int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
     for (int i = 1; i < t; i++) {
         idx = i2i(idx, i);
@@ -115,10 +85,16 @@ int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
     i2c(idx, globalConfig.alphabet, globalConfig.taille, clair);
     byte empreinte[SHA_DIGEST_LENGTH];
     hash_SHA1(clair, empreinte);
-    return verif_hash(h, empreinte);
+    
+    for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
+        if(h[i] != empreinte[i])
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
 
-// Fonction d'inversion
 int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
     int nb_candidats = 0;
     for (int t = largeur - 1; t > 0; t--) {
@@ -141,11 +117,8 @@ int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
     }
 }
 
-
 void sauve_table_ascii(char *filename, int largeur, int hauteur, uint64_t **table) {
-
     FILE *file = fopen(filename, "w");
-
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -195,49 +168,42 @@ uint64_t** ouvre_table_ascii(char *filename, int *largeur, int *hauteur) {
             exit(1);
         }
     }
-
     fclose(file);
 
     return table;
 }
 
-
 void affiche_table(char* filename)
 {
     int largeur, hauteur;
     uint64_t** table = ouvre_table_ascii(filename, &largeur, &hauteur);
-    
-     for (int h = 0; h < hauteur; h++) {
-         printf("%lu %lu\n", table[h][0], table[h][1]);
-     }
+
+    for (int h = 0; h < hauteur; h++) {
+        printf("%lu %lu\n", table[h][0], table[h][1]);
+    }
 }
 
-void help(char* name) {
-    printf("Usage: %s <ALPHABET> <TAILLE> <COMMANDE> [ARGUMENTS]\n", name);
+void help() {
     printf("\n");
     printf("Available commands:\n");
 
-    printf("  hash <STRING>\n"
+    printf("  <ALPHABET> <TAILLE> hash <STRING>\n"
            "            Compute the hash of the given string\n");
-
-    printf("  i2c <NUMBER>\n"
-           "            Convert the given number to a clear text\n");
-
-    printf("  h2c <8_BYTE_HASH> <t> <N>\n"
-           "            Process the given hash and values to retrieve a clear text\n");
-
-    printf("\n");
-    printf("Options:\n");
-    printf("  <ALPHABET> <TAILLE>   Define alphabet and size of clear text\n");
-    printf("  <COMMANDE>            Choose from the available commands\n");
-    printf("  [ARGUMENTS]           Additional arguments required by specific commands\n");
+    printf("  <ALPHABET> <TAILLE> calcul_n\n"
+           "            Return N\n");
+    printf("  <ALPHABET> <TAILLE> h2i <STRING> <t>\n"
+           "            Calcul h2i\n");
+    printf("  <ALPHABET> <TAILLE> i2i <t> <LARGEUR>\n"
+           "            Calcul i2i\n");
+    printf("  <ALPHABET> <TAILLE> creer_table <LARGEUR> <HAUTEUR>\n"
+           "            Create a rainbow table\n");
+    printf("  <ALPHABET> <TAILLE> sauve_table <LARGEUR> <HAUTEUR> <FILENAME>\n"
+           "            Save a rainbow table in a specific file\n");
+    printf("  <ALPHABET> <TAILLE> info <FILENAME>\n"
+           "            Show rainbow table from file\n");     
+    printf("  <ALPHABET> <TAILLE> inverse <FILENAME> <8_BYTE_HASH>\n"
+           "            Crack a give byte in the given filename\n");
 }
-
-int compare(const void *a, const void *b) {
-    return (*((uint64_t **)a))[1] - (*((uint64_t **)b))[1];
-}
-
-
 
 void print_hexa(byte* empreinte)
 {
@@ -277,6 +243,10 @@ uint64_t index_aleatoire(){
     return n % N;
 }
 
+int compare(const void *a, const void *b) {
+    return (*((uint64_t **)a))[1] - (*((uint64_t **)b))[1];
+}
+
 void creer_table(int largeur, int hauteur, uint64_t **table) {
     for (int i = 0; i < hauteur; i++) {
         table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
@@ -289,23 +259,21 @@ void creer_table(int largeur, int hauteur, uint64_t **table) {
         table[h][1] = last_idx;
     }
 
-    // Sort the table by the second column
     qsort(table, hauteur, sizeof(uint64_t *), compare);
 }
 
 int main(int argc, char *argv[]) {
+    printf("=========================================================================\n");
     srand(time(NULL));
-    
-    if (argc < 4) {
+
+    if (strcmp(argv[1], "help") == 0) { 
+        help();
+        exit(1);
+    } else if (argc < 4) {
         printf("Usage: %s <ALPHABET> <TAILLE> <COMMANDE> [ARGUMENTS]\n", argv[0]);
         return 1;
     }
 
-    // for (int i = 0; i < argc; i++) {
-    //         printf("argv[%d]: %s\n", i, argv[i]);
-    // }
-
-    char *commande = argv[3];
     setUpConfig(argv[1], atoi(argv[2]));
 
     if (!estValeurCorrecte(globalConfig.N)) {
@@ -313,8 +281,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    char *commande = argv[3];
     printf("Commande : %s\n", commande);
     if (strcmp(commande, "hash") == 0) {
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 hash oups
        printf("Commande : hash\n");
 
        if (argc < 5) {
@@ -329,7 +299,17 @@ int main(int argc, char *argv[]) {
        }
        printf("\n");       
     }
+    else if (strcmp(commande, "calcul_n") == 0) {
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 4 calcul_n
+       if (argc < 3) {
+              printf("Usage: %s calcul_n\n", argv[0]);
+              return 1;
+       }
+       uint64_t l = pow(globalConfig.tailleAlphabet, globalConfig.taille);
+       printf("Calcul de N avec alphabet = %s et taille = %d => %lu", globalConfig.alphabet, globalConfig.taille, l);
+    }
     else if (strcmp(commande, "i2c") == 0) {
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 4 i2c 1234
        printf("Commande : i2c\n");
        if (argc < 5) {
               printf("Usage: %s i2c <NUMBER>\n", argv[0]);
@@ -341,11 +321,11 @@ int main(int argc, char *argv[]) {
        printf("i2c(%llu) = \"%s\"\n", nombre, texteClair);
     }
     else if (strcmp(commande, "h2i") == 0) {
-        // ./main abcdefghijklmnopqrstuvwxyz 5 h2i oups 1
-       if (argc < 6) {
-         printf("Usage: %s <ALPHABET> <TAILLE> h2i <WORD_TO_HASH> <t>\n", argv[0]);
-         return 1;
-       }
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 h2i oups 1
+        if (argc < 6) {
+            printf("Usage: %s <ALPHABET> <TAILLE> h2i <WORD_TO_HASH> <t>\n", argv[0]);
+            return 1;
+        }
        
        // Calcul du hash 
        char* word = argv[4];
@@ -367,7 +347,7 @@ int main(int argc, char *argv[]) {
        
     } 
     else if (strcmp(commande, "i2i") == 0) {
-        // ./main abcdefghijklmnopqrstuvwxyz 5 i2i
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 i2i 1 10
         if (argc < 5) {
             printf("Usage: %s <ALPHABET> <TAILLE> i2i <t> <LARGEUR>\n", argv[0]);
             return 1;
@@ -386,7 +366,7 @@ int main(int argc, char *argv[]) {
 
     }
     else if (strcmp(commande, "creer_table") == 0) {
-        // ./main abcdefghijklmnopqrstuvwxyz 5 creer_table 200 100
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 creer_table 200 100
         if (argc < 5) {
             printf("Usage: %s <ALPHABET> <TAILLE> creer_table <LARGEUR> <HAUTEUR>\n", argv[0]);
             return 1;
@@ -397,10 +377,13 @@ int main(int argc, char *argv[]) {
 
         uint64_t table[hauteur][2];
         creer_table(largeur, hauteur, table);
+
+        for (int h = 0; h < hauteur; h++) {
+            printf("\n%lu %lu\n", table[h][0], table[h][1]);
+        }
     }
     else if (strcmp(commande, "sauve_table") == 0) {
-        // ./main abcdefghijklmnopqrstuvwxyz 5 sauve_table 200 100 test.txt
-        // ./main ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
+        // ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
         if (argc < 6) {
             printf("Usage: %s <ALPHABET> <TAILLE> sauve_table <LARGEUR> <HAUTEUR> <FILENAME>\n", argv[0]);
             return 1;
@@ -415,7 +398,7 @@ int main(int argc, char *argv[]) {
         sauve_table_ascii(argv[6], largeur, hauteur, table);
     }
     else if (strcmp(commande, "info") == 0) {
-        // ./main abcdefghijklmnopqrstuvwxyz 5 info test.txt
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 info test.txt
         if (argc < 5) {
             printf("Usage: %s <ALPHABET> <TAILLE> info <FILENAME>\n", argv[0]);
             return 1;
