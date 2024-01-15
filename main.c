@@ -66,78 +66,78 @@ uint64_t i2i (int indice, int t)
     return i;
 }
 
-int recherche(uint64_t **table, int hauteur, uint64_t idx, int *a, int *b) {
-    int debut = 0;
-    int fin = hauteur - 1;
-    int trouve = 0;
-
-    while (debut <= fin && !trouve) {
-        int milieu = (debut + fin) / 2;
-
-        if (table[milieu][1] == idx) {
-            trouve = 1;
-            *a = *b = milieu;
-
-            // Recherche vers le haut
+int recherche(uint64_t **table, int hauteur, uint64_t idx, int* a, int* b) {
+    int i = 0;
+    int j = hauteur - 1;
+    while (i <= j) {
+        int m = (i + j) / 2;
+        if (table[m][1] == idx) {
+            *a = m;
+            *b = m;
             while (*a > 0 && table[*a - 1][1] == idx) {
                 (*a)--;
             }
-
-            // Recherche vers le bas
             while (*b < hauteur - 1 && table[*b + 1][1] == idx) {
                 (*b)++;
             }
-        } else if (table[milieu][1] < idx) {
-            debut = milieu + 1;
+            return *b - *a + 1;
+        } else if (table[m][1] < idx) {
+            i = m + 1;
         } else {
-            fin = milieu - 1;
+            j = m - 1;
         }
     }
+    return 0;
+}
 
-    return trouve;
+int verif_hash(byte* h, byte* empreinte) {
+    for (int i = 0; i < SHA_DIGEST_LENGTH; i=i+1) {
+        uint8_t a_h = h[i];
+        uint8_t b_h = h[i+1];
+        //first byte of empreinte[i]
+        int a_empreinte = empreinte[i];
+        //second byte of empreinte[i]
+        int b_empreinte = empreinte[i];
+        if(a_h != a_empreinte && b_h != b_empreinte)
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 // Vérifie si un candidat est correct
 int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
-    for (int i = t - 1; i >= 0; i--) {
+    for (int i = 1; i < t; i++) {
         idx = i2i(idx, i);
     }
-
+    
     i2c(idx, globalConfig.alphabet, globalConfig.taille, clair);
-    byte h2[SHA_DIGEST_LENGTH];
-    hash_SHA1(clair, h2);
-
-    return memcmp(h2, h, SHA_DIGEST_LENGTH) == 0;
+    byte empreinte[SHA_DIGEST_LENGTH];
+    hash_SHA1(clair, empreinte);
+    return verif_hash(h, empreinte);
 }
 
 // Fonction d'inversion
 int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
-    int trouve = 0;
-
+    int nb_candidats = 0;
     for (int t = largeur - 1; t > 0; t--) {
         uint64_t idx = h2i(h, t);
-        int a, b;
+        for (int i = t + 1; i < largeur; i++) {
+            idx = i2i(idx, i);
+        }
 
-        if (recherche(table, hauteur, idx, &a, &b)) {
+        int a, b;
+        if (recherche(table, hauteur, idx, &a, &b) > 0) {
             for (int i = a; i <= b; i++) {
-                if (verifie_candidat(h, t, table[i][1], clair)) {
-                    trouve = 1;
-                    printf("Candidat correct trouvé : %s\n", clair);
-                    break;
+                if (verifie_candidat(h, t, table[i][0], clair) == 1) {
+                    printf("Candidat correct trouvé : %s , nombre de candidats : %d\n", clair, nb_candidats);
+                    return 1;
+                } else {
+                    nb_candidats++;
                 }
             }
         }
-        if (trouve) {
-            break;
-        }
-    }
-
-    if (trouve) {
-        printf("Inverse trouvé : %s\n", clair);
-        return 1;
-    } else {
-        printf("Aucun candidat correct trouvé. Nombre de candidats : %d\n");
-        return 0;
     }
 }
 
@@ -181,7 +181,6 @@ uint64_t** ouvre_table_ascii(char *filename, int *largeur, int *hauteur) {
         exit(1);
     }
 
-    printf("alphabet = %s, taille = %d, largeur = %d, hauteur = %d\n", tempAlphabet, h.taille, h.largeur, h.hauteur);
     h.alphabet = malloc(strlen(tempAlphabet) + 1);
     strcpy(h.alphabet, tempAlphabet);
 
@@ -290,29 +289,9 @@ void creer_table(int largeur, int hauteur, uint64_t **table) {
         table[h][1] = last_idx;
     }
 
-    // Print the unsorted table
-    for (int i = 0; i < hauteur; i++) {
-        printf("%lu %lu\n", table[i][0], table[i][1]);
-    }
-
     // Sort the table by the second column
     qsort(table, hauteur, sizeof(uint64_t *), compare);
-    
-    // Print the sorted table
-    printf("\nSorted Table:\n");
-    for (int i = 0; i < hauteur; i++) {
-        printf("%lu %lu\n", table[i][0], table[i][1]);
-    }
 }
-
-void hexstr_to_bytes(const char *hexstr, byte *bytes) {
-    while (*hexstr && hexstr[1]) {
-        sscanf(hexstr, "%2hhx", bytes++);
-        hexstr += 2;
-    }
-}
-
-
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
@@ -421,6 +400,7 @@ int main(int argc, char *argv[]) {
     }
     else if (strcmp(commande, "sauve_table") == 0) {
         // ./main abcdefghijklmnopqrstuvwxyz 5 sauve_table 200 100 test.txt
+        // ./main ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
         if (argc < 6) {
             printf("Usage: %s <ALPHABET> <TAILLE> sauve_table <LARGEUR> <HAUTEUR> <FILENAME>\n", argv[0]);
             return 1;
@@ -444,32 +424,34 @@ int main(int argc, char *argv[]) {
         affiche_table(argv[4]);
     }
     else if (strcmp(commande, "inverse") == 0){
-        printf("TEST:%s, %s, %s", argv[5], argv[6], argv[7]);
+        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 inverse test.txt 1bfbdf35b1359fc6b6f93893874cf23a50293de5
+        // ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61
         if (argc < 5) {
-                printf("Usage: %s <ALPHABET> <TAILLE> inverse <hauteur> <largeur> <8_BYTE_HASH>\n", argv[0]);
-                return 1;
-            }
+            printf("Usage: %s <ALPHABET> <TAILLE> inverse <FILENAME <8_BYTE_HASH>\n", argv[0]);
+            return 1;
+        }
 
-            int hauteur = atoi(argv[4]);
-            int largeur = atoi(argv[5]);
-            byte hash   = atoi(argv[6]);
-            uint64_t **table = (uint64_t **)malloc(hauteur * sizeof(uint64_t *));
-            for (int i = 0; i < hauteur; i++) {
-                table[i] = (uint64_t *)malloc(2 * sizeof(uint64_t));
-            }
+        int largeur, hauteur;
+        uint64_t** table = ouvre_table_ascii(argv[4], &largeur, &hauteur);
 
-            // Création de la table
-            creer_table(largeur, hauteur, table);
+        byte* hash = malloc(SHA_DIGEST_LENGTH * sizeof(byte));
+        char* hashString = argv[5];
 
-            char clair[globalConfig.taille + 1];
+        for(int i = 0; i < SHA_DIGEST_LENGTH; i++)
+        {
+            char hex[3];
+            hex[0] = hashString[i*2];
+            hex[1] = hashString[i*2+1];
+            hex[2] = '\0';
+            hash[i] = (byte)strtol(hex, NULL, 16);
+        }
 
-            hexstr_to_bytes(argv[4], &hash);
-
-            if (inverse(table, hauteur, largeur, &hash, clair)) {
-                printf("Inverse trouvé : %s\n", clair);
-            } else {
-                printf("Aucun candidat correct trouvé.\n");
-            }
+        char clair[globalConfig.taille + 1];
+        if (inverse(table, hauteur, largeur, hash, clair)) {
+            printf("Inverse trouvé : %s\n", clair);
+        } else {
+            printf("Aucun candidat correct trouvé.\n");
+        }
     }
     else {
         printf("Erreur : commande non reconnue.\n");
