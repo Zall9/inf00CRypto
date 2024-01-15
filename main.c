@@ -77,6 +77,26 @@ int recherche(uint64_t **table, int hauteur, uint64_t idx, int* a, int* b) {
     return 0;
 }
 
+int rechercheExhaustive(uint64_t **table, int hauteur, uint64_t idx, int* a, int* b) {
+    int debut = 0;
+    int fin = hauteur - 1;
+    for (int i = 0; i < hauteur; i++)
+    {
+        if (table[i][1] == idx) {
+            *a = i;
+            *b = i;
+            while (*a > 0 && table[*a - 1][1] == idx) {
+                (*a)--;
+            }
+            while (*b < hauteur - 1 && table[*b + 1][1] == idx) {
+                (*b)++;
+            }
+            return *b - *a + 1;
+        }
+    }
+    
+}
+
 int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
     for (int i = 1; i < t; i++) {
         idx = i2i(idx, i);
@@ -95,7 +115,7 @@ int verifie_candidat(byte *h, int t, uint64_t idx, char *clair) {
     return 1;
 }
 
-int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
+int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair, int isExhaustive) {
     int nb_candidats = 0;
     for (int t = largeur - 1; t > 0; t--) {
         uint64_t idx = h2i(h, t);
@@ -104,13 +124,26 @@ int inverse(uint64_t **table, int hauteur, int largeur, byte *h, char *clair) {
         }
 
         int a, b;
-        if (recherche(table, hauteur, idx, &a, &b) > 0) {
-            for (int i = a; i <= b; i++) {
-                if (verifie_candidat(h, t, table[i][0], clair) == 1) {
-                    printf("Candidat correct trouvé : %s , nombre de candidats : %d\n", clair, nb_candidats);
-                    return 1;
-                } else {
-                    nb_candidats++;
+        if(isExhaustive == 1 ) {
+            if (rechercheExhaustive(table, hauteur, idx, &a, &b) > 0) {
+                for (int i = a; i <= b; i++) {
+                    if (verifie_candidat(h, t, table[i][0], clair) == 1) {
+                        printf("Candidat correct trouvé : %s , nombre de candidats : %d\n", clair, nb_candidats);
+                        return 1;
+                    } else {
+                        nb_candidats++;
+                    }
+                }
+            }
+        }else {
+            if (recherche(table, hauteur, idx, &a, &b) > 0) {
+                for (int i = a; i <= b; i++) {
+                    if (verifie_candidat(h, t, table[i][0], clair) == 1) {
+                        printf("Candidat correct trouvé : %s , nombre de candidats : %d\n", clair, nb_candidats);
+                        return 1;
+                    } else {
+                        nb_candidats++;
+                    }
                 }
             }
         }
@@ -201,7 +234,7 @@ void help() {
            "            Save a rainbow table in a specific file\n");
     printf("  <ALPHABET> <TAILLE> info <FILENAME>\n"
            "            Show rainbow table from file\n");     
-    printf("  <ALPHABET> <TAILLE> inverse <FILENAME> <8_BYTE_HASH>\n"
+    printf("  <ALPHABET> <TAILLE> inverse <FILENAME> <8_BYTE_HASH> <EXHAUSTIF>\n"
            "            Crack a give byte in the given filename\n");
     printf("  <ALPHABET> <TAILLE> stats <HAUTEUR> <LARGEUR>\n"
            "            Give length and couverture estimation \n");
@@ -434,10 +467,9 @@ int main(int argc, char *argv[]) {
         estimation(largeur, hauteur);
     }
     else if (strcmp(commande, "inverse") == 0){
-        // ./tp1 abcdefghijklmnopqrstuvwxyz 5 inverse test.txt 1bfbdf35b1359fc6b6f93893874cf23a50293de5
-        // ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61
-        if (argc < 5) {
-            printf("Usage: %s <ALPHABET> <TAILLE> inverse <FILENAME <8_BYTE_HASH>\n", argv[0]);
+        // ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61 0
+        if (argc < 6) {
+            printf("Usage: %s <ALPHABET> <TAILLE> inverse <FILENAME <8_BYTE_HASH> <EXHAUSTIF>\n", argv[0]);
             return 1;
         }
 
@@ -446,7 +478,6 @@ int main(int argc, char *argv[]) {
 
         byte* hash = malloc(SHA_DIGEST_LENGTH * sizeof(byte));
         char* hashString = argv[5];
-
         for(int i = 0; i < SHA_DIGEST_LENGTH; i++)
         {
             char hex[3];
@@ -457,7 +488,8 @@ int main(int argc, char *argv[]) {
         }
 
         char clair[globalConfig.taille + 1];
-        if (inverse(table, hauteur, largeur, hash, clair)) {
+        int exhaustif = argv[6];
+        if (inverse(table, hauteur, largeur, hash, clair, exhaustif)) {
             printf("Inverse trouvé : %s\n", clair);
         } else {
             printf("Aucun candidat correct trouvé.\n");

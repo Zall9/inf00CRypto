@@ -61,7 +61,7 @@ Question 11 =================================================================
 
 En reprenant le fichier generer par le premier test de la question 10, on est censé récupérer le mot CODE.
 
-    test    : ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61
+    test    : ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61 0
 
 Question 12 =================================================================
 
@@ -73,9 +73,30 @@ Question 13 =================================================================
     test    : ./tp1 abcdefghijklmnopqrstuvwxyz 4 stats 200 200
 
 Question 14 =================================================================
+    test 1 :
+        ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
+        ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61 0
+
+    test 2 :
+        ./tp1 "abcdefghijklmnopqrstuvwxyz0123456789,;:$." 5 sauve_table 1000 1000 test.txt
+        ./tp1 "abcdefghijklmnopqrstuvwxyz0123456789,;:$." 5 inverse test.txt dafaa5e15a30ecd52c2d1dc6d1a3d8a0633e67e2 0
 
 Question 15 =================================================================
 
+La taille de la table arc-en-ciel serait très grande.
+En effet, il y aurait environ 2,18 x 10^14 mots de passe possibles avec ces paramètres. 
+Si chaque mot de passe est stocké dans la table avec son hachage correspondant, la taille de la table serait d’environ 1,6 x 10^21 octets.
+
 Question 16 =================================================================
+    test 1 :
+        ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 sauve_table 1000 1000 test.txt
+        ./tp1 ABCDEFGHIJKLMNOPQRSTUVWXYZ 4 inverse test.txt 16de25af888480da1af57a71855f3e8c515dcb61 1
 
 Question 17 =================================================================
+
+Le sel est une chaîne de caractères aléatoires qui est ajoutée au mot de passe avant le hachage. Cette opération rend chaque hachage unique,
+    même pour des mots de passe identiques.
+Ainsi, même si un attaquant a accès à une table arc-en-ciel, il ne peut pas l’utiliser pour décrypter les mots de passe salés.
+Il doit plutôt effectuer une attaque par force brute, qui est beaucoup plus lente et plus difficile à réaliser.
+En conséquence, l’utilisation de sel pour les mots de passe est une technique efficace pour renforcer la sécurité des mots de passe et 
+    empêcher les attaques par tables arc-en-ciel.
